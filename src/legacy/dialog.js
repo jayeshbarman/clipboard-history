@@ -241,7 +241,10 @@ class ClipboardDialog extends ModalDialog.ModalDialog {
             (this._scroll.vscroll && this._scroll.vscroll.adjustment);
         if (!adj)
             return;
-        GLib.idle_add(GLib.PRIORITY_DEFAULT, () => {
+        if (this._scrollIdleId)
+            GLib.source_remove(this._scrollIdleId);
+        this._scrollIdleId = GLib.idle_add(GLib.PRIORITY_DEFAULT, () => {
+            this._scrollIdleId = 0;
             const box = actor.get_allocation_box();
             if (box.y1 < adj.value)
                 adj.value = box.y1;
@@ -307,6 +310,10 @@ class ClipboardDialog extends ModalDialog.ModalDialog {
     }
 
     destroy() {
+        if (this._scrollIdleId) {
+            GLib.source_remove(this._scrollIdleId);
+            this._scrollIdleId = 0;
+        }
         if (this._storeChangedId) {
             this._store.disconnect(this._storeChangedId);
             this._storeChangedId = 0;

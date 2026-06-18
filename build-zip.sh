@@ -29,7 +29,8 @@ build() {
         process.stdout.write(JSON.stringify(m, null, 2) + "\n");
     ' "$variant" "$REPO/metadata.json" > "$tmp/metadata.json"
 
-    glib-compile-schemas "$tmp/schemas" >/dev/null 2>&1 || true
+    # EGO compiles schemas on install; shipping gschemas.compiled is flagged
+    # as an unnecessary build artifact, so we ship only the .gschema.xml source.
 
     local zip="$OUT/${UUID}.${variant}.zip"
     rm -f "$zip"

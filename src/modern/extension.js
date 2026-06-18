@@ -31,6 +31,8 @@ export default class ClipboardHistoryExtension extends Extension {
         this._clipboard = St.Clipboard.get_default();
         this._selection = global.display.get_selection();
         this._pauseTracking = false;
+        this._pasteTimeoutId = 0;
+        this._unpauseTimeoutId = 0;
 
         this._selectionOwnerChangedId = this._selection.connect('owner-changed',
             (_sel, type) => {
@@ -80,6 +82,10 @@ export default class ClipboardHistoryExtension extends Extension {
         if (this._pasteTimeoutId) {
             GLib.source_remove(this._pasteTimeoutId);
             this._pasteTimeoutId = 0;
+        }
+        if (this._unpauseTimeoutId) {
+            GLib.source_remove(this._unpauseTimeoutId);
+            this._unpauseTimeoutId = 0;
         }
 
         this._destroyIndicator();
@@ -157,8 +163,11 @@ export default class ClipboardHistoryExtension extends Extension {
             }
         }
 
-        GLib.timeout_add(GLib.PRIORITY_DEFAULT, 250, () => {
+        if (this._unpauseTimeoutId)
+            GLib.source_remove(this._unpauseTimeoutId);
+        this._unpauseTimeoutId = GLib.timeout_add(GLib.PRIORITY_DEFAULT, 250, () => {
             this._pauseTracking = false;
+            this._unpauseTimeoutId = 0;
             return GLib.SOURCE_REMOVE;
         });
 

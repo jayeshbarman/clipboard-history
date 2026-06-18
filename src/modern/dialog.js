@@ -277,8 +277,11 @@ class ClipboardDialog extends ModalDialog.ModalDialog {
         const adj = this._scroll.vadjustment;
         if (!adj)
             return;
+        if (this._scrollIdleId)
+            GLib.source_remove(this._scrollIdleId);
         // Defer until the actor has a valid allocation.
-        GLib.idle_add(GLib.PRIORITY_DEFAULT, () => {
+        this._scrollIdleId = GLib.idle_add(GLib.PRIORITY_DEFAULT, () => {
+            this._scrollIdleId = 0;
             const box = actor.get_allocation_box();
             const y1 = box.y1, y2 = box.y2;
             if (y1 < adj.value)
@@ -347,6 +350,10 @@ class ClipboardDialog extends ModalDialog.ModalDialog {
     }
 
     destroy() {
+        if (this._scrollIdleId) {
+            GLib.source_remove(this._scrollIdleId);
+            this._scrollIdleId = 0;
+        }
         if (this._storeChangedId) {
             this._store.disconnect(this._storeChangedId);
             this._storeChangedId = 0;
