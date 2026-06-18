@@ -1,0 +1,10 @@
+{
+  "uuid": "clipboard-history@jayeshbarman.github.io",
+  "name": "Clipboard History",
+  "description": "A Windows-style clipboard history for GNOME. Press Super+V to open a searchable history of everything you've copied (text and images), pin items so they survive restarts, delete or clear, and paste with a click. A native replacement for the Windows 10/11 clipboard (Win+V).",
+  "shell-version": ["3.36", "3.38", "40", "41", "42", "43", "44", "45", "46", "47", "48", "49", "50"],
+  "settings-schema": "org.gnome.shell.extensions.clipboard-history",
+  "gettext-domain": "clipboard-history",
+  "url": "https://github.com/jayeshbarman/clipboard-history",
+  "version-name": "1.0.0"
+}

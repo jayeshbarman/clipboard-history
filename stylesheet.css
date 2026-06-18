@@ -1,0 +1,108 @@
+/* Clipboard History — popup styling */
+
+.clip-dialog .modal-dialog-content-box {
+    padding: 0;
+}
+
+.clip-content {
+    spacing: 10px;
+    width: 540px;
+    padding: 14px;
+}
+
+.clip-header {
+    spacing: 8px;
+}
+
+.clip-title {
+    font-weight: bold;
+    font-size: 1.1em;
+}
+
+.clip-header-btn {
+    padding: 4px;
+    border-radius: 8px;
+    color: #bbb;
+}
+
+.clip-header-btn:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+}
+
+.clip-header-btn.active {
+    color: #f66;
+}
+
+.clip-search {
+    border-radius: 10px;
+    padding: 8px 12px;
+}
+
+.clip-scroll {
+    max-height: 460px;
+    min-height: 120px;
+}
+
+.clip-list {
+    spacing: 4px;
+    padding: 2px;
+}
+
+.clip-item {
+    spacing: 6px;
+    padding: 8px 10px;
+    border-radius: 10px;
+    border: 1px solid transparent;
+}
+
+.clip-item:hover {
+    background-color: rgba(255, 255, 255, 0.07);
+}
+
+.clip-item.selected {
+    background-color: rgba(120, 170, 255, 0.22);
+    border: 1px solid rgba(120, 170, 255, 0.55);
+}
+
+.clip-item-body {
+    spacing: 10px;
+}
+
+.clip-item-icon {
+    color: #9aa;
+}
+
+.clip-item-text {
+    font-size: 1.0em;
+}
+
+.clip-thumb {
+    border-radius: 6px;
+}
+
+.clip-item-action {
+    padding: 5px;
+    border-radius: 8px;
+    color: #aaa;
+}
+
+.clip-item-action:hover {
+    background-color: rgba(255, 255, 255, 0.14);
+    color: #fff;
+}
+
+.clip-item-action.pinned {
+    color: #6cf;
+}
+
+.clip-empty {
+    text-align: center;
+    padding: 40px 20px;
+    color: #999;
+    font-size: 1.05em;
+}
+
+.clip-menu-accel {
+    color: #888;
+    font-size: 0.9em;
+}

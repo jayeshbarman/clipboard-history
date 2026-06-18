@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<schemalist gettext-domain="clipboard-history">
+  <schema id="org.gnome.shell.extensions.clipboard-history"
+          path="/org/gnome/shell/extensions/clipboard-history/">
+
+    <key name="toggle-clipboard" type="as">
+      <default><![CDATA[['<Super>v']]]></default>
+      <summary>Open clipboard history</summary>
+      <description>Keyboard shortcut that opens the clipboard history popup (Windows uses Win+V).</description>
+    </key>
+
+    <key name="history-size" type="i">
+      <default>25</default>
+      <range min="5" max="500"/>
+      <summary>Number of items to keep</summary>
+      <description>Maximum number of unpinned entries kept in history. Pinned items are always kept. Windows keeps 25.</description>
+    </key>
+
+    <key name="capture-images" type="b">
+      <default>true</default>
+      <summary>Capture images</summary>
+      <description>Also remember images copied to the clipboard (PNG/JPEG/etc.), up to 4 MB each.</description>
+    </key>
+
+    <key name="paste-on-select" type="b">
+      <default>true</default>
+      <summary>Paste immediately on selection</summary>
+      <description>When you pick an item, type it straight into the focused app (sends Ctrl+V). If off, the item is only placed on the clipboard and you paste yourself.</description>
+    </key>
+
+    <key name="show-indicator" type="b">
+      <default>true</default>
+      <summary>Show a panel icon</summary>
+      <description>Show a clipboard icon in the top bar for quick access.</description>
+    </key>
+
+    <key name="paste-as-plain-text" type="b">
+      <default>false</default>
+      <summary>Always paste as plain text</summary>
+      <description>Strip rich formatting and paste everything as plain text.</description>
+    </key>
+
+    <key name="private-mode" type="b">
+      <default>false</default>
+      <summary>Pause history (private mode)</summary>
+      <description>When on, new clipboard contents are not recorded.</description>
+    </key>
+
+    <key name="notify-on-copy" type="b">
+      <default>false</default>
+      <summary>Notify on copy</summary>
+      <description>Show a brief notification each time something is added to history.</description>
+    </key>
+  </schema>
+</schemalist>
