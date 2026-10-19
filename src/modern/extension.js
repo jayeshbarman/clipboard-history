@@ -32,6 +32,7 @@ export default class ClipboardHistoryExtension extends Extension {
         this._selection = global.display.get_selection();
         this._pauseTracking = false;
         this._pasteTimeoutId = 0;
+        this._keyReleaseTimeoutId = 0;
         this._unpauseTimeoutId = 0;
 
         this._selectionOwnerChangedId = this._selection.connect('owner-changed',
@@ -82,6 +83,10 @@ export default class ClipboardHistoryExtension extends Extension {
         if (this._pasteTimeoutId) {
             GLib.source_remove(this._pasteTimeoutId);
             this._pasteTimeoutId = 0;
+        }
+        if (this._keyReleaseTimeoutId) {
+            GLib.source_remove(this._keyReleaseTimeoutId);
+            this._keyReleaseTimeoutId = 0;
         }
         if (this._unpauseTimeoutId) {
             GLib.source_remove(this._unpauseTimeoutId);
@@ -176,12 +181,25 @@ export default class ClipboardHistoryExtension extends Extension {
     }
 
     _schedulePaste() {
-        if (this._pasteTimeoutId)
+        if (this._pasteTimeoutId) {
             GLib.source_remove(this._pasteTimeoutId);
-        // Give the closing dialog time to hand keyboard focus back to the app.
-        this._pasteTimeoutId = GLib.timeout_add(GLib.PRIORITY_DEFAULT, 200, () => {
             this._pasteTimeoutId = 0;
-            this._sendPaste();
+        }
+
+        // Give the closing dialog time to dismiss and hand keyboard focus back to the target app.
+        this._pasteTimeoutId = GLib.timeout_add(GLib.PRIORITY_DEFAULT, 150, () => {
+            this._pasteTimeoutId = 0;
+            const target = this._targetWindow ?? global.display.focus_window;
+            if (target) {
+                try {
+                    if (!target.has_focus())
+                        target.activate(global.get_current_time());
+                } catch (_e) {}
+            }
+            GLib.timeout_add(GLib.PRIORITY_DEFAULT, 50, () => {
+                this._sendPaste();
+                return GLib.SOURCE_REMOVE;
+            });
             return GLib.SOURCE_REMOVE;
         });
     }
@@ -193,11 +211,49 @@ export default class ClipboardHistoryExtension extends Extension {
                 this._virtualKeyboard = seat.create_virtual_device(Clutter.InputDeviceType.KEYBOARD_DEVICE);
             }
             const vk = this._virtualKeyboard;
-            const t = Clutter.get_current_event_time();
-            vk.notify_keyval(t, Clutter.KEY_Control_L, Clutter.KeyState.PRESSED);
-            vk.notify_keyval(t, Clutter.KEY_v, Clutter.KeyState.PRESSED);
-            vk.notify_keyval(t, Clutter.KEY_v, Clutter.KeyState.RELEASED);
-            vk.notify_keyval(t, Clutter.KEY_Control_L, Clutter.KeyState.RELEASED);
+
+            // Linux evdev keycodes:
+            // KEY_LEFTCTRL = 29, KEY_LEFTSHIFT = 42, KEY_V = 47
+            const KEY_LEFTCTRL = 29;
+            const KEY_LEFTSHIFT = 42;
+            const KEY_V = 47;
+
+            if (this._keyReleaseTimeoutId) {
+                GLib.source_remove(this._keyReleaseTimeoutId);
+                this._keyReleaseTimeoutId = 0;
+                try {
+                    const tr = GLib.get_monotonic_time();
+                    vk.notify_key(tr, KEY_V, Clutter.KeyState.RELEASED);
+                    vk.notify_key(tr, KEY_LEFTSHIFT, Clutter.KeyState.RELEASED);
+                    vk.notify_key(tr, KEY_LEFTCTRL, Clutter.KeyState.RELEASED);
+                } catch (_e) {}
+            }
+
+            const focusWindow = global.display.focus_window;
+            const wmClass = focusWindow ? (focusWindow.get_wm_class() ?? '').toLowerCase() : '';
+            const isTerminal = /terminal|konsole|alacritty|kitty|xterm|tilix|ptyxis|console/.test(wmClass);
+
+            const t = GLib.get_monotonic_time();
+
+            // Press modifiers + V via raw evdev keycodes (bypasses layout-specific keyval mapping)
+            vk.notify_key(t, KEY_LEFTCTRL, Clutter.KeyState.PRESSED);
+            if (isTerminal)
+                vk.notify_key(t, KEY_LEFTSHIFT, Clutter.KeyState.PRESSED);
+
+            vk.notify_key(t, KEY_V, Clutter.KeyState.PRESSED);
+
+            // Release after a short delay so the target app registers the shortcut reliably
+            this._keyReleaseTimeoutId = GLib.timeout_add(GLib.PRIORITY_DEFAULT, 30, () => {
+                this._keyReleaseTimeoutId = 0;
+                try {
+                    const tr = GLib.get_monotonic_time();
+                    vk.notify_key(tr, KEY_V, Clutter.KeyState.RELEASED);
+                    if (isTerminal)
+                        vk.notify_key(tr, KEY_LEFTSHIFT, Clutter.KeyState.RELEASED);
+                    vk.notify_key(tr, KEY_LEFTCTRL, Clutter.KeyState.RELEASED);
+                } catch (_e) {}
+                return GLib.SOURCE_REMOVE;
+            });
         } catch (e) {
             logError(e, 'clipboard-history: auto-paste failed (item is still on the clipboard)');
         }
@@ -208,10 +264,12 @@ export default class ClipboardHistoryExtension extends Extension {
     _toggle() {
         if (!this._dialog)
             return;
-        if (this._dialog._isOpen)
+        if (this._dialog._isOpen) {
             this._dialog.close(global.get_current_time());
-        else
+        } else {
+            this._targetWindow = global.display.focus_window;
             this._dialog.open(global.get_current_time());
+        }
     }
 
     _addKeybinding() {
@@ -232,8 +290,20 @@ export default class ClipboardHistoryExtension extends Extension {
         if (!this._settings.get_boolean('show-indicator'))
             return;
         this._indicator = new ClipboardIndicator(this._store, {
-            onActivate: entry => this._applyEntry(entry, true),
-            onOpenFull: () => this._toggle(),
+            onMenuOpen: () => {
+                const fw = global.display.focus_window;
+                if (fw)
+                    this._targetWindow = fw;
+            },
+            onActivate: entry => {
+                const fw = global.display.focus_window;
+                if (fw)
+                    this._targetWindow = fw;
+                this._applyEntry(entry, true);
+            },
+            onOpenFull: () => {
+                this._toggle();
+            },
             onClear: () => this._store.clear(true),
             onSettings: () => this.openPreferences(),
         });

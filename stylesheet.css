@@ -64,7 +64,17 @@
     border: 1px solid rgba(120, 170, 255, 0.55);
 }
 
-.clip-item-body {
+.clip-item-body,
+.clip-item-body:hover,
+.clip-item-body:focus,
+.clip-item-body:active {
+    border: none;
+    background-color: transparent;
+    padding: 0;
+    box-shadow: none;
+}
+
+.clip-item-content {
     spacing: 10px;
 }
 

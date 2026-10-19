@@ -23,8 +23,10 @@ class ClipboardIndicator extends PanelMenu.Button {
         }));
 
         this.menu.connect('open-state-changed', (_menu, open) => {
-            if (open)
+            if (open) {
+                this._cb.onMenuOpen?.();
                 this._rebuild();
+            }
         });
         this._rebuild();
     }
@@ -53,7 +55,10 @@ class ClipboardIndicator extends PanelMenu.Button {
                     const pin = new St.Icon({icon_name: 'view-pin-symbolic', icon_size: 12});
                     item.add_child(pin);
                 }
-                item.connect('activate', () => this._cb.onActivate?.(entry));
+                item.connect('activate', () => {
+                    this.menu.close();
+                    this._cb.onActivate?.(entry);
+                });
                 this.menu.addMenuItem(item);
             }
         }
@@ -67,7 +72,10 @@ class ClipboardIndicator extends PanelMenu.Button {
             x_expand: true,
             style_class: 'clip-menu-accel',
         }));
-        openItem.connect('activate', () => this._cb.onOpenFull?.());
+        openItem.connect('activate', () => {
+            this.menu.close();
+            this._cb.onOpenFull?.();
+        });
         this.menu.addMenuItem(openItem);
 
         const clearItem = new PopupMenu.PopupMenuItem('Clear history');

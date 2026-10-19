@@ -147,8 +147,15 @@ class ClipboardDialog extends ModalDialog.ModalDialog {
             x_expand: true,
         });
 
-        // Content (icon/thumbnail + text).
-        const body = new St.BoxLayout({style_class: 'clip-item-body', x_expand: true});
+        // Content (icon/thumbnail + text) in a dedicated clickable button.
+        const bodyBtn = new St.Button({
+            style_class: 'clip-item-body',
+            x_expand: true,
+            can_focus: false,
+            reactive: true,
+        });
+
+        const body = new St.BoxLayout({style_class: 'clip-item-content', x_expand: true});
 
         if (entry.type === 'image') {
             const thumb = new St.Icon({
@@ -181,7 +188,11 @@ class ClipboardDialog extends ModalDialog.ModalDialog {
             label.clutter_text.ellipsize = 3; // Pango.EllipsizeMode.END
             body.add_child(label);
         }
-        row.add_child(body);
+        bodyBtn.set_child(body);
+        bodyBtn.connect('clicked', () => {
+            this._activate(entry);
+        });
+        row.add_child(bodyBtn);
 
         // Pin button.
         const pinBtn = new St.Button({
@@ -210,10 +221,18 @@ class ClipboardDialog extends ModalDialog.ModalDialog {
         });
         row.add_child(delBtn);
 
-        // Activate (paste) when the row body is clicked.
-        row.connect('button-release-event', () => {
-            this._activate(entry);
-            return Clutter.EVENT_STOP;
+        // Fallback: activate (paste) when anywhere on row padding is clicked.
+        row.connect('button-press-event', (_actor, event) => {
+            if (event.get_button() === Clutter.BUTTON_PRIMARY)
+                return Clutter.EVENT_STOP;
+            return Clutter.EVENT_PROPAGATE;
+        });
+        row.connect('button-release-event', (_actor, event) => {
+            if (event.get_button() === Clutter.BUTTON_PRIMARY) {
+                this._activate(entry);
+                return Clutter.EVENT_STOP;
+            }
+            return Clutter.EVENT_PROPAGATE;
         });
         row.connect('enter-event', () => {
             this._setSelected(index);
@@ -293,6 +312,8 @@ class ClipboardDialog extends ModalDialog.ModalDialog {
     }
 
     _activate(entry) {
+        if (!this._isOpen)
+            return;
         this.close(global.get_current_time());
         this._cb.onActivate?.(entry);
     }
@@ -346,6 +367,9 @@ class ClipboardDialog extends ModalDialog.ModalDialog {
 
     close(timestamp) {
         this._isOpen = false;
+        try {
+            global.stage.set_key_focus(null);
+        } catch (_e) {}
         super.close(timestamp ?? global.get_current_time());
     }
 
